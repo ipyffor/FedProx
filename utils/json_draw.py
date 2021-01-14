@@ -8,9 +8,10 @@ import matplotlib.font_manager as fm
 json_list = sys.argv[1:]
 length = None #None
 show_all = True
-scale = 20
+scale = 50
 acc_loss = []
 acc_grad = []
+acc_random = []
 xticks = []
 with open(json_list[0], 'r') as f:
     metrics_dic = json.load(f)
@@ -29,22 +30,32 @@ with open(json_list[1], 'r') as f:
             acc_grad.extend([a / b for a, b in zip(acc[3], acc[2])])
         else:
             acc_grad.append(np.sum(acc[3]) * 1.0 / np.sum(acc[2]))
-
+with open(json_list[2], 'r') as f:
+    metrics_dic = json.load(f)
+    train_accuracies = metrics_dic['train_accuracies']
+    for i, acc in enumerate(train_accuracies):
+        # xticks.append(i)
+        if show_all:
+            acc_random.extend([a/b for a,b in zip(acc[3], acc[2])])
+        else:
+            acc_random.append(np.sum(acc[3]) * 1.0 / np.sum(acc[2]))
 
 sub_length = length if length is not None else len(acc_loss)
 acc_loss = acc_loss[:sub_length:scale]
 acc_grad = acc_grad[:sub_length:scale]
+acc_random = acc_random[:sub_length:scale]
 X = [ i for i in range(0,len(acc_grad))]
 
-ln1, = plt.plot(X,acc_loss,color='red',linewidth=0.3,linestyle='-')
-ln2, = plt.plot(X,acc_grad,color='blue',linewidth=0.3,linestyle='-')
+ln1, = plt.plot(X,acc_loss,color='red',linewidth=2,linestyle='-')
+ln2, = plt.plot(X,acc_grad,color='blue',linewidth=2,linestyle='-')
+ln3, = plt.plot(X,acc_random,color='green',linewidth=2,linestyle='-')
 xticks = xticks[::20]
 a = math.ceil(len(X)/len(xticks))
 plt.xticks(X[::a], xticks)
 
 my_font = fm.FontProperties(fname="../font/wqy-microhei.ttc")
 plt.title("训练精度比较",fontproperties=my_font) #设置标题及字体
-plt.legend(handles=[ln1, ln2], labels=['根据loss选择用户', '根据grad选择用户'], prop=my_font)
+plt.legend(handles=[ln1, ln2, ln3], labels=['根据loss选择用户', '根据grad选择用户', '随机选择用户'], prop=my_font)
 
 ax = plt.gca()
 ax.spines['right'].set_color('none')  #
