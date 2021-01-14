@@ -106,30 +106,30 @@ class Metrics(object):
         self.client_computations[cid][rnd] += comp
         self.bytes_read[cid][rnd] += bytes_r
 
-        def write(self, json_name=''):
-            metrics = {}
-            metrics['dataset'] = self.params['dataset']
-            metrics['num_rounds'] = self.params['num_rounds']
-            metrics['eval_every'] = self.params['eval_every']
-            metrics['learning_rate'] = self.params['learning_rate']
-            metrics['mu'] = self.params['mu']
-            metrics['num_epochs'] = self.params['num_epochs']
-            metrics['batch_size'] = self.params['batch_size']
-            metrics['accuracies'] = self.accuracies
-            metrics['train_accuracies'] = self.train_accuracies
-            metrics['client_computations'] = self.client_computations
-            metrics['bytes_written'] = self.bytes_written
-            metrics['bytes_read'] = self.bytes_read
-            metrics_dir = os.path.join('out', self.params['dataset'],
-                                       json_name + 'metrics_{}_{}_{}_{}_{}.json'.format(self.params['seed'],
-                                                                                        self.params['optimizer'],
-                                                                                        self.params['learning_rate'],
-                                                                                        self.params['num_epochs'],
-                                                                                        self.params['mu']))
-            # os.mkdir(os.path.join('out', self.params['dataset']))
-            if not os.path.exists(os.path.join('out', self.params['dataset'])):
-                os.makedirs(os.path.join('out', self.params['dataset']), exist_ok=True)
-            # if not os.path.exists(metrics_dir):
-            #     os.makedirs(metrics_dir, exist_ok=True)
-            with open(metrics_dir, 'w') as ouf:
-                json.dump(metrics, ouf)
+    def write(self, json_name=''):
+        metrics = {}
+        metrics['dataset'] = self.params['dataset']
+        metrics['num_rounds'] = self.params['num_rounds']
+        metrics['eval_every'] = self.params['eval_every']
+        metrics['learning_rate'] = self.params['learning_rate']
+        metrics['mu'] = self.params['mu']
+        metrics['num_epochs'] = self.params['num_epochs']
+        metrics['batch_size'] = self.params['batch_size']
+        metrics['accuracies'] = self.accuracies
+        metrics['train_accuracies'] = self.train_accuracies
+        metrics['client_computations'] = self.client_computations
+        metrics['bytes_written'] = self.bytes_written
+        metrics['bytes_read'] = self.bytes_read
+        metrics_dir = os.path.join('out', self.params['dataset'],
+                                   json_name + 'metrics_{}_{}_{}_{}_{}.json'.format(self.params['seed'],
+                                                                                    self.params['optimizer'],
+                                                                                    self.params['learning_rate'],
+                                                                                    self.params['num_epochs'],
+                                                                                    self.params['mu']))
+        # os.mkdir(os.path.join('out', self.params['dataset']))
+        if not os.path.exists(os.path.join('out', self.params['dataset'])):
+            os.makedirs(os.path.join('out', self.params['dataset']), exist_ok=True)
+        # if not os.path.exists(metrics_dir):
+        #     os.makedirs(metrics_dir, exist_ok=True)
+        with open(metrics_dir, 'w') as ouf:
+            json.dump(metrics, ouf)
