@@ -3,6 +3,8 @@ from tqdm import trange, tqdm
 import tensorflow as tf
 import heapq
 from .fedbase import BaseFedarated
+import random
+
 from flearn.utils.tf_utils import process_grad
 
 
@@ -15,8 +17,8 @@ class Server(BaseFedarated):
     def train(self):
         '''Train using Federated Proximal'''
         print('Training with {} workers ---'.format(self.clients_per_round))
-        choices = ['loss', 'grad']
-        choice = 'select_based_' + choices[0]
+        choices = ['loss', 'grad', 'grad_random']
+        choice = 'select_based_' + choices[2]
 
         for i in range(self.num_rounds):
             # test model
@@ -58,10 +60,28 @@ class Server(BaseFedarated):
             #
             if choice == 'select_based_loss':
                 index = map(loss_all.index, heapq.nsmallest(self.clients_per_round, loss_all))
-            else:
+            elif choice == 'delect_based_grad':
                 index = map(all_delta_grads.index, heapq.nlargest(self.clients_per_round, all_delta_grads))
+            elif choice == 'select_based_grad_random':
+                vis = [0]*len(all_delta_grads)
+                sum_prob = sum(all_delta_grads)
+                index = []
+                for _ in range(self.clients_per_round):
+
+                    x = random.uniform(0, sum_prob)
+                    cumu_prob = 0.
+                    for i, (item) in enumerate(all_delta_grads):
+                        if vis[i] == 0:
+                            cumu_prob += item
+                            if x < cumu_prob:
+                                index.append(i)
+                                sum_prob -= all_delta_grads[i]
+                                vis[i] = 1
+                                break
+                pass
             # update models
-            index = list(index)
+            if not isinstance(index, list):
+                index = list(index)
             for j in index:
                 self.metrics.update(rnd=i, cid=clients_list[j].id, stats=all_stats[j])
             csolns = [csolns[i] for i in index]
