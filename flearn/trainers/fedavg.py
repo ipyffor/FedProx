@@ -17,6 +17,7 @@ class Server(BaseFedarated):
         print('Training with {} workers ---'.format(self.clients_per_round))
         choices = ['loss', 'grad']
         choice = 'select_based_' + choices[0]
+
         for i in range(self.num_rounds):
             # test model
             if i % self.eval_every == 0:

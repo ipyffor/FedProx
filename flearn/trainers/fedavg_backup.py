@@ -21,11 +21,12 @@ class Server(BaseFedarated):
             if i % self.eval_every == 0:
                 stats = self.test()  # have set the latest model for all clients
                 stats_train = self.train_error_and_loss()
-
+                self.metrics.accuracies.append(stats)
+                self.metrics.train_accuracies.append(stats_train)
                 tqdm.write('At round {} accuracy: {}'.format(i, np.sum(stats[3]) * 1.0 / np.sum(stats[2])))  # testing accuracy
                 tqdm.write('At round {} training accuracy: {}'.format(i, np.sum(stats_train[3]) * 1.0 / np.sum(stats_train[2])))
                 tqdm.write('At round {} training loss: {}'.format(i, np.dot(stats_train[4], stats_train[2]) * 1.0 / np.sum(stats_train[2])))
-
+                self.metrics.write('random_select')
             indices, selected_clients = self.select_clients(i, num_clients=self.clients_per_round)  # uniform sampling
             np.random.seed(i)
             active_clients = np.random.choice(selected_clients, round(self.clients_per_round * (1-self.drop_percent)), replace=False)
@@ -55,3 +56,4 @@ class Server(BaseFedarated):
         self.metrics.train_accuracies.append(stats_train)
         tqdm.write('At round {} accuracy: {}'.format(self.num_rounds, np.sum(stats[3]) * 1.0 / np.sum(stats[2])))
         tqdm.write('At round {} training accuracy: {}'.format(self.num_rounds, np.sum(stats_train[3]) * 1.0 / np.sum(stats_train[2])))
+        self.metrics.write('random_select')
