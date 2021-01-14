@@ -112,6 +112,10 @@ class BaseFedarated(object):
         indices = np.random.choice(range(len(self.clients)), num_clients, replace=False)
         return indices, np.asarray(self.clients)[indices]
 
+    def get_clients(self):
+
+        return np.asarray(self.clients)
+
     def aggregate(self, wsolns):
         total_weight = 0.0
         base = [0]*len(wsolns[0][1])

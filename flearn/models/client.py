@@ -1,5 +1,5 @@
 import numpy as np
-
+import math
 class Client(object):
     
     def __init__(self, id, group=None, train_data={'x':[],'y':[]}, eval_data={'x':[],'y':[]}, model=None):
@@ -22,7 +22,9 @@ class Client(object):
     def get_grads(self, model_len):
         '''get model gradient'''
         return self.model.get_gradients(self.train_data, model_len)
-
+    def get_loss(self):
+        loss = self.model.get_loss(self.train_data)
+        return loss
     def solve_grad(self):
         '''get model gradient with cost'''
         bytes_w = self.model.size
@@ -41,11 +43,14 @@ class Client(object):
             2: comp: number of FLOPs executed in training process
             2: bytes_write: number of bytes transmitted
         '''
+        grads = self.model.get_gradients(self.train_data, 200)
 
         bytes_w = self.model.size
         soln, comp = self.model.solve_inner(self.train_data, num_epochs, batch_size)
         bytes_r = self.model.size
-        return (self.num_samples, soln), (bytes_w, comp, bytes_r)
+        delta_grads = math.sqrt(np.square(grads[1]-self.model.get_gradients(self.train_data, 200)[1]).sum())
+        loss = self.get_loss()
+        return (self.num_samples, soln), (bytes_w, comp, bytes_r), delta_grads, loss
 
     def solve_iters(self, num_iters=1, batch_size=10):
         '''Solves local optimization problem

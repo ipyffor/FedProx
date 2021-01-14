@@ -36,7 +36,7 @@ class Model(object):
         """Model function for Logistic Regression."""
         features = tf.placeholder(tf.float32, shape=[None, 60], name='features')
         labels = tf.placeholder(tf.int64, shape=[None,], name='labels')
-        logits = tf.layers.dense(inputs=features, units=self.num_classes, kernel_regularizer=tf.contrib.layers.l2_regularizer(0.001))
+        logits = tf.layers.dense(inputs=features, units=self.num_classes, kernel_regularizer=tf.contrib.layers.l2_regularizer(0.))
         predictions = {
             "classes": tf.argmax(input=logits, axis=1),
             "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
@@ -72,7 +72,9 @@ class Model(object):
             grads = process_grad(model_grads)
 
         return num_samples, grads
-    
+    def get_loss(self, data):
+        loss = self.sess.run(self.loss, feed_dict={self.features: data['x'], self.labels: data['y']})
+        return loss
     def solve_inner(self, data, num_epochs=1, batch_size=32):
         '''Solves local optimization problem'''
 

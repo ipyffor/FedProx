@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import trange, tqdm
 import tensorflow as tf
-
+import heapq
 from .fedbase import BaseFedarated
 from flearn.utils.tf_utils import process_grad
 
@@ -26,26 +26,42 @@ class Server(BaseFedarated):
                 tqdm.write('At round {} training accuracy: {}'.format(i, np.sum(stats_train[3]) * 1.0 / np.sum(stats_train[2])))
                 tqdm.write('At round {} training loss: {}'.format(i, np.dot(stats_train[4], stats_train[2]) * 1.0 / np.sum(stats_train[2])))
 
-            indices, selected_clients = self.select_clients(i, num_clients=self.clients_per_round)  # uniform sampling
-            np.random.seed(i)
-            active_clients = np.random.choice(selected_clients, round(self.clients_per_round * (1-self.drop_percent)), replace=False)
-
+            # indices, selected_clients = self.select_clients(i, num_clients=self.clients_per_round)  # uniform sampling
+            # np.random.seed(i)
+            # active_clients = np.random.choice(selected_clients, round(self.clients_per_round * (1-self.drop_percent)), replace=False)
+            clients = self.get_clients()
             csolns = []  # buffer for receiving client solutions
-
-            for idx, c in enumerate(active_clients.tolist()):  # simply drop the slow devices
+            all_delta_grads = []
+            all_stats = []
+            clients_list = clients.tolist()
+            loss_all = []
+            choices = ['loss', 'grad']
+            choice = 'select_based_' + choices[0]
+            for idx, c in enumerate(clients_list):  # simply drop the slow devices
                 # communicate the latest model
                 c.set_params(self.latest_model)
 
                 # solve minimization locally
-                soln, stats = c.solve_inner(num_epochs=self.num_epochs, batch_size=self.batch_size)
-
+                soln, stats, delta_grads, loss = c.solve_inner(num_epochs=self.num_epochs, batch_size=self.batch_size)
+                loss_all.append(loss)
                 # gather solutions from client
                 csolns.append(soln)
+                all_delta_grads.append(delta_grads)
+                all_stats.append(stats)
 
                 # track communication cost
-                self.metrics.update(rnd=i, cid=c.id, stats=stats)
 
+
+            #
+            if choice == 'select_based_loss':
+                index = map(loss_all.index, heapq.nsmallest(self.clients_per_round, loss_all))
+            else:
+                index = map(all_delta_grads.index, heapq.nlargest(self.clients_per_round, all_delta_grads))
             # update models
+            index = list(index)
+            for j in index:
+                self.metrics.update(rnd=i, cid=clients_list[j].id, stats=all_stats[j])
+            csolns = [csolns[i] for i in index]
             self.latest_model = self.aggregate(csolns)
 
         # final test model
@@ -55,3 +71,4 @@ class Server(BaseFedarated):
         self.metrics.train_accuracies.append(stats_train)
         tqdm.write('At round {} accuracy: {}'.format(self.num_rounds, np.sum(stats[3]) * 1.0 / np.sum(stats[2])))
         tqdm.write('At round {} training accuracy: {}'.format(self.num_rounds, np.sum(stats_train[3]) * 1.0 / np.sum(stats_train[2])))
+        self.metrics.write()
